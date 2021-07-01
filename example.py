@@ -57,23 +57,19 @@ class FixedWidthPositiveInt(BaseModel):
         return str(self.__root__).rjust(self._max_str_length, INT_FILL_VALUE)
 
 
-class IngredientModel(BaseModel):
-    __root__: FixedWidthStr
+class IngredientListModel(BaseModel):
+    __root__: List[FixedWidthStr]
 
     def as_fixed_width(self):
-        return self.__root__.as_fixed_width()
+        return " ".join(ingredient.as_fixed_width() for ingredient in self.__root__)
 
 
 class PizzaModel(BaseModel):
     quantity: FixedWidthPositiveInt
     name: FixedWidthStr
-    ingredients: List[IngredientModel]
+    ingredients: IngredientListModel
 
     def as_fixed_width(self):
-        quantity_fw = self.quantity.as_fixed_width()
-        name_fw = self.name.as_fixed_width()
-        ingredients_fw = " ".join(ing.as_fixed_width() for ing in self.ingredients)
-
         return (
             textwrap.dedent(
                 """
@@ -82,12 +78,12 @@ class PizzaModel(BaseModel):
                 INGREDIENTS: {ingredients_fw}
                 """
             )
-            .format(
-                quantity_fw=quantity_fw,
-                name_fw=name_fw,
-                ingredients_fw=ingredients_fw,
-            )
             .strip("\n")
+            .format(
+                quantity_fw=self.quantity.as_fixed_width(),
+                name_fw=self.name.as_fixed_width(),
+                ingredients_fw=self.ingredients.as_fixed_width(),
+            )
         )
 
 
@@ -104,8 +100,8 @@ class OrderModel(BaseModel):
                 END OF PIZZAS ORDER
                 """
             )
-            .format(pizzas_fw=pizzas_fw)
             .strip("\n")
+            .format(pizzas_fw=pizzas_fw)
         )
 
 
