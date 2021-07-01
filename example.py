@@ -9,12 +9,12 @@ from pydantic.types import conint, constr
 input_dict = {
     "pizzas": [
         {
-            "quantity": 1,
+            "quantity": "1",
             "name": "Mozzarella",
             "ingredients": ["Tomato sauce", "Mozzarella cheese"],
         },
         {
-            "quantity": 20,
+            "quantity": "20",
             "name": "Brazilian Calabresa",
             "ingredients": ["Tomato sauce", "Calabresa sausage", "Onion"],
         },
@@ -50,8 +50,29 @@ class FixedWidthStr(BaseModel):
 
 class FixedWidthPositiveInt(BaseModel):
     _max_str_length: ClassVar[int] = 3
+    _min_int: ClassVar[int] = 1
+    _max_int: ClassVar[int] = 999
 
-    __root__: conint(gt=0, le=999)
+    __root__: constr(max_length=_max_str_length)
+
+    @validator("__root__")
+    def valid_int(cls, v):
+        try:
+            v_as_int = int(v.lstrip("0"))
+        except ValueError:
+            raise ValidationError(f"Can't convert {v} to int")
+
+        if v_as_int > cls._max_int:
+            raise ValidationError(
+                f"{v_as_int} is greater than the max value {cls._max_int}"
+            )
+
+        if v_as_int < cls._min_int:
+            raise ValidationError(
+                f"{v_as_int} is smaller than the min value {cls._min_int}"
+            )
+
+        return v
 
     def as_fixed_width(self):
         return str(self.__root__).rjust(self._max_str_length, INT_FILL_VALUE)
