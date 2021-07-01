@@ -1,8 +1,8 @@
 import textwrap
 from typing import ClassVar, List
 
-from pydantic import BaseModel, ValidationError, validator
-from pydantic.types import conint, constr
+from pydantic import BaseModel, validator
+from pydantic.types import constr
 
 # Example to generate a fixed width file from a JSON.
 # The JSON input will have this format:
@@ -60,17 +60,13 @@ class FixedWidthPositiveInt(BaseModel):
         try:
             v_as_int = int(v.lstrip("0"))
         except ValueError:
-            raise ValidationError(f"Can't convert {v} to int")
+            raise ValueError(f"Can't convert {v} to int")
 
         if v_as_int > cls._max_int:
-            raise ValidationError(
-                f"{v_as_int} is greater than the max value {cls._max_int}"
-            )
+            raise ValueError(f"{v_as_int} is greater than the max value {cls._max_int}")
 
         if v_as_int < cls._min_int:
-            raise ValidationError(
-                f"{v_as_int} is smaller than the min value {cls._min_int}"
-            )
+            raise ValueError(f"{v_as_int} is smaller than the min value {cls._min_int}")
 
         return v
 
@@ -83,7 +79,8 @@ class IngredientListModel(BaseModel):
 
     @validator("__root__")
     def not_empty(cls, v):
-        assert len(v) > 1, "must have at least 1 ingredient. Found {len(v)}"
+        if len(v) < 1:
+            raise ValueError(f"must have at least 1 ingredient. Found {len(v)}")
         return v
 
     def as_fixed_width(self):
